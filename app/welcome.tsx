@@ -10,11 +10,11 @@ import {
 
 export default function WelcomeScreen() {
   const handleStart = () => {
-    router.replace("/(tabs)");
+    router.replace("/login");
   };
 
   const handleLogin = () => {
-    router.push("/login");
+    router.push("/(tabs)");
   };
 
   return (

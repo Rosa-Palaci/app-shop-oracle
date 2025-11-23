@@ -1,4 +1,3 @@
-// app/_layout.tsx
 import {
   DarkTheme,
   DefaultTheme,
@@ -10,7 +9,6 @@ import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
-// Le decimos al router que la primera pantalla sea "welcome"
 export const unstable_settings = {
   initialRouteName: "welcome",
 };
