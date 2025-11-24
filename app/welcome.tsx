@@ -14,7 +14,7 @@ export default function WelcomeScreen() {
   };
 
   const handleLogin = () => {
-    router.push("/(tabs)");
+    router.push("/public-home");
   };
 
   return (
