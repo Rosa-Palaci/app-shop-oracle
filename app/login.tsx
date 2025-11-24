@@ -1,7 +1,7 @@
 import { Stack, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, Dimensions, Image, TouchableOpacity, View } from "react-native";
-import { Button, Text, TextInput, IconButton } from "react-native-paper";
+import { Button, IconButton, Text, TextInput } from "react-native-paper";
 import { Colors } from "../constants/theme";
 import { useAuthStore } from "../stores/useAuthStore";
 
@@ -12,6 +12,7 @@ export default function LoginScreen() {
 
   // Estado del Customer ID
   const [customerId, setCustomerId] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // Zustand Store
   const hydratedCustomerId = useAuthStore((state) => state.customer_id);
@@ -36,14 +37,49 @@ export default function LoginScreen() {
     }
   }, [hasHydrated, hydratedCustomerId]);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!customerId.trim()) {
       Alert.alert("Error", "Por favor ingresa un Customer ID válido.");
       return;
     }
 
-    saveId(customerId);
-    router.replace("/(tabs)");
+    try {
+      setLoading(true);
+
+      const response = await fetch("http://localhost:3000/api/customer/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ customer_id: customerId }),
+      });
+
+      const data = await response.json();
+      console.log("Respuesta backend:", data);
+
+      // Manejo de errores del backend
+      if (!response.ok) {
+        Alert.alert(
+          "Error",
+          data.message || "No se pudo iniciar sesión. Intenta nuevamente."
+        );
+        return;
+      }
+
+      // Cliente no encontrado
+      if (!data.success || data.data?.length === 0) {
+        Alert.alert("Error", "Customer ID no encontrado.");
+        return;
+      }
+
+      saveId(customerId);
+      router.replace("/(tabs)");
+    } catch (error) {
+      console.log("Login error:", error);
+      Alert.alert("Error", "No se pudo conectar con el servidor.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -59,12 +95,12 @@ export default function LoginScreen() {
           paddingHorizontal: 24,
         }}
       >
-        {/* BOTÓN DE REGRESO (Esquina superior izquierda) */}
+        {/* BOTÓN DE REGRESO */}
         <IconButton
           icon="arrow-left"
           size={28}
           iconColor={Colors.light.tint}
-          onPress={() => router.push("/welcome")} // ← FIX: vuelve a welcome
+          onPress={() => router.push("/welcome")}
           style={{
             position: "absolute",
             top: 50,
@@ -97,14 +133,14 @@ export default function LoginScreen() {
           Bienvenida a ShopMate
         </Text>
 
-        {/* Login con Customer ID */}
+        {/* INPUT Customer ID */}
         <TextInput
           label="Customer ID"
           placeholder="Ej: 100234"
           mode="outlined"
           value={customerId}
           onChangeText={setCustomerId}
-          keyboardType="numeric"
+          keyboardType="default"
           autoCapitalize="none"
           style={{
             width: "100%",
@@ -117,52 +153,11 @@ export default function LoginScreen() {
           theme={{ roundness: 28 }}
         />
 
-        {/* 
-          --------------------------------------------------------------------
-          * ANTERIOR FLUJO DE AUTENTICACIÓN (Correo y Contraseña)
-          --------------------------------------------------------------------
-
-          const [email, setEmail] = useState("");
-          const [password, setPassword] = useState("");
-
-          <TextInput
-              label="Correo electrónico"
-              mode="outlined"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              style={{
-                marginBottom: 12,
-                borderRadius: 28,
-                backgroundColor: "white",
-              }}
-              outlineColor="#f0c5ca"
-              activeOutlineColor="#ff5b6bff"
-              theme={{ roundness: 28 }}
-          />
-
-          <TextInput
-              label="Contraseña"
-              mode="outlined"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              style={{
-                marginBottom: 18,
-                borderRadius: 28,
-                backgroundColor: "white",
-              }}
-              outlineColor="#f0c5ca"
-              activeOutlineColor="#ff5b6bff"
-              theme={{ roundness: 28 }}
-          />
-        */}
-
         {/* BOTÓN */}
         <Button
           mode="contained"
           onPress={handleLogin}
+          loading={loading}
           buttonColor={Colors.light.tint}
           textColor="#fff"
           style={{
@@ -187,7 +182,9 @@ export default function LoginScreen() {
             marginBottom: 10,
           }}
         >
-          <Text style={{ color: "gray", fontSize: 15 }}>¿No tienes cuenta?</Text>
+          <Text style={{ color: "gray", fontSize: 15 }}>
+            ¿No tienes cuenta?
+          </Text>
 
           <TouchableOpacity onPress={() => router.push("/register")}>
             <Text

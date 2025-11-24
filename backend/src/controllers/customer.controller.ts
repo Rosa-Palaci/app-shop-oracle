@@ -18,9 +18,16 @@ export async function loginCustomer(req: Request, res: Response) {
 
     await conn.close();
 
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+
     return res.json({
       success: true,
-      data: result.rows,
+      data: result.rows[0],
     });
   } catch (error) {
     console.error("Login error:", error);
