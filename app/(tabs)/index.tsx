@@ -1,98 +1,238 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { router } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Dimensions,
+  FlatList,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const RED = "#EA0040";
+const { width } = Dimensions.get("window");
+
+// Fake Data
+const carouselItems = [
+  require("@/assets/images/react-logo.png"),
+  require("@/assets/images/icon.png"),
+  require("@/assets/images/partial-react-logo.png"),
+];
+
+const seguirComprando = [
+  {
+    id: "1",
+    img: require("@/assets/images/icon.png"),
+    name: "Producto carrito 1",
+  },
+  {
+    id: "2",
+    img: require("@/assets/images/icon.png"),
+    name: "Producto carrito 2",
+  },
+  {
+    id: "3",
+    img: require("@/assets/images/icon.png"),
+    name: "Producto carrito 3",
+  },
+];
+
+const ofertas = [
+  { id: "1", img: require("@/assets/images/react-logo.png"), name: "Oferta 1" },
+  { id: "2", img: require("@/assets/images/react-logo.png"), name: "Oferta 2" },
+  { id: "3", img: require("@/assets/images/react-logo.png"), name: "Oferta 3" },
+];
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const scrollX = useRef(new Animated.Value(0)).current;
+  const carouselRef = useRef<FlatList>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  // Auto–carrusel
+  useEffect(() => {
+    const interval = setInterval(() => {
+      let next = (currentIndex + 1) % carouselItems.length;
+      setCurrentIndex(next);
+      carouselRef.current?.scrollToIndex({ index: next, animated: true });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [currentIndex]);
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
+        {/* HEADER: Buscador + Carrito */}
+        <View style={styles.header}>
+          <TextInput
+            placeholder="Buscar productos..."
+            placeholderTextColor="#777"
+            style={[
+              styles.searchInput,
+              { borderColor: searchFocused ? RED : "#CFCFCF" },
+            ]}
+            selectionColor={RED}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+          />
+
+          <TouchableOpacity
+            style={styles.cartButton}
+            onPress={() => router.push("/cart")}
+          >
+            <Image
+              source={require("@/assets/images/icon-card.png")}
+              style={styles.cartIcon}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* CAROUSEL */}
+        <Text style={styles.sectionTitle}>Últimos productos vistos</Text>
+
+        <Animated.FlatList
+          ref={carouselRef}
+          data={carouselItems}
+          horizontal
+          pagingEnabled
+          keyExtractor={(_, index) => index.toString()}
+          showsHorizontalScrollIndicator={false}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+            { useNativeDriver: false }
+          )}
+          renderItem={({ item }) => (
+            <View style={styles.carouselItem}>
+              <Image source={item} style={styles.carouselImage} />
+            </View>
+          )}
+        />
+
+        {/* SEGUIR COMPRANDO */}
+        <Text style={styles.sectionTitle}>Seguir comprando</Text>
+
+        <View style={styles.grid}>
+          {seguirComprando.map((p) => (
+            <View key={p.id} style={styles.card}>
+              <Image source={p.img} style={styles.cardImg} />
+              <Text style={styles.cardText}>{p.name}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* OFERTAS PARA TI */}
+        <Text style={styles.sectionTitle}>Ofertas para ti</Text>
+
+        <View style={styles.grid}>
+          {ofertas.map((p) => (
+            <View key={p.id} style={styles.card}>
+              <Image source={p.img} style={styles.cardImg} />
+              <Text style={styles.cardText}>{p.name}</Text>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
+// Styles
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff",
   },
-  stepContainer: {
-    gap: 8,
+
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 20,
+  },
+
+  searchInput: {
+    flex: 1,
+    backgroundColor: "#F3F3F3",
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 16,
+    borderWidth: 2,
+  },
+
+  cartButton: {
+    marginLeft: 12,
+  },
+
+  cartIcon: {
+    width: 36,
+    height: 36,
+    resizeMode: "contain",
+  },
+
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginLeft: 16,
+    marginBottom: 12,
+    color: RED,
+  },
+
+  carouselItem: {
+    width: width * 0.8,
+    height: 220,
+    marginHorizontal: width * 0.1,
+    backgroundColor: "#fafafa",
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+  },
+
+  carouselImage: {
+    width: "70%",
+    height: "70%",
+    resizeMode: "contain",
+  },
+
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+  },
+
+  card: {
+    width: "47%",
+    backgroundColor: "#fafafa",
+    borderRadius: 16,
+    paddingVertical: 20,
+    marginBottom: 20,
+    alignItems: "center",
+    elevation: 2,
+  },
+
+  cardImg: {
+    width: 80,
+    height: 80,
     marginBottom: 8,
+    resizeMode: "contain",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+
+  cardText: {
+    fontSize: 14,
+    fontWeight: "500",
+    textAlign: "center",
   },
 });
