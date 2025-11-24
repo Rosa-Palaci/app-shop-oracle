@@ -1,0 +1,12 @@
+retailmodeldb_high = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.us-chicago-1.oraclecloud.com))(connect_data=(service_name=g9dccc2b1df5629_retailmodeldb_high.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+retailmodeldb_low = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.us-chicago-1.oraclecloud.com))(connect_data=(service_name=g9dccc2b1df5629_retailmodeldb_low.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+retailmodeldb_medium = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.us-chicago-1.oraclecloud.com))(connect_data=(service_name=g9dccc2b1df5629_retailmodeldb_medium.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+retailmodeldb_tp = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.us-chicago-1.oraclecloud.com))(connect_data=(service_name=g9dccc2b1df5629_retailmodeldb_tp.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+retailmodeldb_tpurgent = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.us-chicago-1.oraclecloud.com))(connect_data=(service_name=g9dccc2b1df5629_retailmodeldb_tpurgent.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+
+
