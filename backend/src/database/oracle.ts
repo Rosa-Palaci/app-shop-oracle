@@ -6,7 +6,6 @@ dotenv.config();
 
 const walletPath = path.join(__dirname, "../../wallet");
 
-// macOS ARM usa TNS_ADMIN en lugar de initOracleClient
 process.env.TNS_ADMIN = walletPath;
 
 export async function initOracle() {
@@ -14,7 +13,7 @@ export async function initOracle() {
     await oracledb.createPool({
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
-      connectString: process.env.DB_CONNECTION, // retailmodeldb_high
+      connectString: process.env.DB_CONNECTION, // team3vectordatabase_high
     });
 
     console.log("🔗 Oracle DB pool initialized");
