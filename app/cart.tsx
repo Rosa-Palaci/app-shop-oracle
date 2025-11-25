@@ -35,7 +35,7 @@ export default function CartScreen() {
           icon="arrow-left"
           size={28}
           iconColor={Colors.light.tint}
-          onPress={() => router.push("/public-home")}
+          onPress={() => router.back()}
           style={styles.backButton}
         />
 
