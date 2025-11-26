@@ -1,4 +1,22 @@
-import oracledb, { type Connection, type Result } from "oracledb";
+import oracledb from "oracledb";
+
+type OracleExecuteOptions = {
+  outFormat?: number;
+  callTimeout?: number;
+};
+
+type OracleResult<T> = {
+  rows?: T[] | null;
+};
+
+type Connection = {
+  execute<T>(
+    sql: string,
+    binds?: unknown[] | Record<string, unknown>,
+    options?: OracleExecuteOptions
+  ): Promise<OracleResult<T>>;
+  close(): Promise<void>;
+};
 import { getConnection } from "../database/oracle";
 
 const callTimeoutMs = Number(process.env.DB_CALL_TIMEOUT ?? 8000);
@@ -41,13 +59,18 @@ export async function getProductsService() {
 
   try {
     connection = await withTimeout(getConnection(), callTimeoutMs);
+    if (!connection) {
+      throw new Error("Failed to obtain an Oracle connection");
+    }
     const query = `
       SELECT url, description_vector_rag, product_type_vector
       FROM admin.articles_modified
     `;
 
-    const result = await withTimeout<Result<ArticleRow>>(
-      connection.execute<ArticleRow>(query, [], {
+    const activeConnection = connection;
+
+    const result: OracleResult<ArticleRow> = await withTimeout<OracleResult<ArticleRow>>(
+      activeConnection.execute<ArticleRow>(query, [], {
         outFormat: oracledb.OUT_FORMAT_OBJECT,
         callTimeout: callTimeoutMs,
       }),
@@ -56,7 +79,7 @@ export async function getProductsService() {
 
     const rows = result.rows ?? [];
 
-    const products = rows.map((row) => {
+    const products = rows.map((row: ArticleRow) => {
       const description = row.DESCRIPTION_VECTOR_RAG ?? null;
 
       return {
