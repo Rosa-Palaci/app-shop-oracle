@@ -6,7 +6,7 @@ export async function getProductsService() {
 
   try {
     connection = await oracledb.getConnection(oracleConfig);
-    const query = `SELECT ARTICLE_NAME, IMG_URL_TEAM3 FROM ARTICLE_CONTENT_RAG`;
+    const query = `SELECT * FROM ARTICLE_CONTENT_RAG`;
 
     const result = await connection.execute(query, [], {
       outFormat: oracledb.OUT_FORMAT_OBJECT,
@@ -15,8 +15,20 @@ export async function getProductsService() {
     const rows = result.rows ?? [];
 
     const products = rows.map((row: any) => ({
-      name: row.ARTICLE_NAME,
-      image: row.IMG_URL_TEAM3,
+      name:
+        row.ARTICLE_NAME ||
+        row.NAME ||
+        row.TITLE ||
+        row.ARTICLE_TITLE ||
+        "Producto sin nombre",
+      image:
+        row.IMG_URL_TEAM3 ||
+        row.IMG_URL ||
+        row.IMAGE_URL ||
+        row.IMAGE ||
+        row.URL ||
+        row.LINK ||
+        null,
     }));
 
     return products;
