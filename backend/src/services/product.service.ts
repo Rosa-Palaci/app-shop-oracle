@@ -1,110 +1,41 @@
 import oracledb from "oracledb";
+import { getConnection } from "../config/oracle.config";
 
-type OracleExecuteOptions = {
-  outFormat?: number;
-  callTimeout?: number;
-};
-
-type OracleResult<T> = {
-  rows?: T[] | null;
-};
-
-type Connection = {
-  execute<T>(
-    sql: string,
-    binds?: unknown[] | Record<string, unknown>,
-    options?: OracleExecuteOptions
-  ): Promise<OracleResult<T>>;
-  close(): Promise<void>;
-};
-import { getConnection } from "../database/oracle";
-
-const callTimeoutMs = Number(process.env.DB_CALL_TIMEOUT ?? 8000);
-
-type ArticleRow = {
-  URL?: string | null;
+type OracleProductRow = {
+  ARTICLE_ID?: number;
+  IMG_URL_TEAM3?: string | null;
   DESCRIPTION_VECTOR_RAG?: string | null;
-  PRODUCT_TYPE_VECTOR?: string | null;
 };
-
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error(`Database request timed out after ${timeoutMs}ms`));
-    }, timeoutMs);
-
-    promise
-      .then((result) => {
-        clearTimeout(timer);
-        resolve(result);
-      })
-      .catch((error) => {
-        clearTimeout(timer);
-        reject(error);
-      });
-  });
-}
 
 export async function getProductsService() {
-  let connection: Connection | null = null;
-
-  const extractField = (description: string | null, label: string) => {
-    if (!description) return null;
-
-    const regex = new RegExp(`${label}:\\s*([^;]+)`, "i");
-    const match = description.match(regex);
-
-    return match ? match[1].trim() : null;
-  };
+  let connection: oracledb.Connection | null = null;
 
   try {
-    connection = await withTimeout(getConnection(), callTimeoutMs);
-    if (!connection) {
-      throw new Error("Failed to obtain an Oracle connection");
-    }
+    connection = await getConnection();
+
     const query = `
-      SELECT url, description_vector_rag, product_type_vector
+      SELECT article_id, img_url_Team3, description_vector_rag
       FROM admin.articles_modified
+      FETCH FIRST 20 ROWS ONLY
     `;
 
-    const activeConnection = connection;
-
-    const result: OracleResult<ArticleRow> = await withTimeout<OracleResult<ArticleRow>>(
-      activeConnection.execute<ArticleRow>(query, [], {
-        outFormat: oracledb.OUT_FORMAT_OBJECT,
-        callTimeout: callTimeoutMs,
-      }),
-      callTimeoutMs
-    );
+    const result = await connection.execute<OracleProductRow>(query, [], {
+      outFormat: oracledb.OUT_FORMAT_OBJECT,
+    });
 
     const rows = result.rows ?? [];
 
-    const products = rows.map((row: ArticleRow) => {
-      const description = row.DESCRIPTION_VECTOR_RAG ?? null;
-
-      return {
-        name: extractField(description, "NOMBRE") || "Producto sin nombre",
-        type: extractField(description, "TIPO"),
-        image: row.URL || null,
-        rawCategory: row.PRODUCT_TYPE_VECTOR || null,
-      };
-    });
-
-    return products;
-  } catch (error) {
-    console.error("Error fetching products from Oracle:", error);
-    const message =
-      error instanceof Error
-        ? `Unable to fetch products: ${error.message}`
-        : "Unable to fetch products due to an unknown database error";
-    throw new Error(message);
+    return rows.map((row) => ({
+      articleId: row.ARTICLE_ID ?? null,
+      imageUrl: row.IMG_URL_TEAM3 ?? null,
+      descriptionVector: row.DESCRIPTION_VECTOR_RAG ?? null,
+    }));
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Unknown error";
+    throw { success: false, error: message };
   } finally {
     if (connection) {
-      try {
-        await connection.close();
-      } catch (closeError) {
-        console.error("Error closing Oracle connection:", closeError);
-      }
+      await connection.close();
     }
   }
 }
