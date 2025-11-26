@@ -1,8 +1,28 @@
 import oracledb from "oracledb";
-import { oracleConfig } from "../database/oracle";
+import { getConnection } from "../database/oracle";
+
+const callTimeoutMs = Number(process.env.DB_CALL_TIMEOUT ?? 8000);
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`Database request timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    promise
+      .then((result) => {
+        clearTimeout(timer);
+        resolve(result);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
 
 export async function getProductsService() {
-  let connection: any = null;
+  let connection: oracledb.Connection | null = null;
 
   const extractField = (description: string | null, label: string) => {
     if (!description) return null;
@@ -14,15 +34,19 @@ export async function getProductsService() {
   };
 
   try {
-    connection = await oracledb.getConnection(oracleConfig);
+    connection = await withTimeout(getConnection(), callTimeoutMs);
     const query = `
       SELECT url, description_vector_rag, product_type_vector
       FROM admin.articles_modified
     `;
 
-    const result = await connection.execute(query, [], {
-      outFormat: oracledb.OUT_FORMAT_OBJECT,
-    });
+    const result = await withTimeout(
+      connection.execute(query, [], {
+        outFormat: oracledb.OUT_FORMAT_OBJECT,
+        callTimeout: callTimeoutMs,
+      }),
+      callTimeoutMs
+    );
 
     const rows = result.rows ?? [];
 
@@ -40,7 +64,11 @@ export async function getProductsService() {
     return products;
   } catch (error) {
     console.error("Error fetching products from Oracle:", error);
-    throw error;
+    const message =
+      error instanceof Error
+        ? `Unable to fetch products: ${error.message}`
+        : "Unable to fetch products due to an unknown database error";
+    throw new Error(message);
   } finally {
     if (connection) {
       try {

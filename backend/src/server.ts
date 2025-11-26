@@ -14,9 +14,18 @@ import productRoutes from "./routes/product.routes";
 app.use("/api/customer", customerRoutes);
 app.use("/api/products", productRoutes);
 
-initOracle();
+async function startServer() {
+  try {
+    await initOracle();
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Backend running on http://localhost:${PORT}`);
-});
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+      console.log(`🚀 Backend running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+}
+
+startServer();
