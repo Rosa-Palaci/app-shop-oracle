@@ -1,7 +1,13 @@
-import oracledb from "oracledb";
+import oracledb, { type Connection, type Result } from "oracledb";
 import { getConnection } from "../database/oracle";
 
 const callTimeoutMs = Number(process.env.DB_CALL_TIMEOUT ?? 8000);
+
+type ArticleRow = {
+  URL?: string | null;
+  DESCRIPTION_VECTOR_RAG?: string | null;
+  PRODUCT_TYPE_VECTOR?: string | null;
+};
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -22,7 +28,7 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
 }
 
 export async function getProductsService() {
-  let connection: oracledb.Connection | null = null;
+  let connection: Connection | null = null;
 
   const extractField = (description: string | null, label: string) => {
     if (!description) return null;
@@ -40,8 +46,8 @@ export async function getProductsService() {
       FROM admin.articles_modified
     `;
 
-    const result = await withTimeout(
-      connection.execute(query, [], {
+    const result = await withTimeout<Result<ArticleRow>>(
+      connection.execute<ArticleRow>(query, [], {
         outFormat: oracledb.OUT_FORMAT_OBJECT,
         callTimeout: callTimeoutMs,
       }),
@@ -50,8 +56,8 @@ export async function getProductsService() {
 
     const rows = result.rows ?? [];
 
-    const products = rows.map((row: any) => {
-      const description = row.DESCRIPTION_VECTOR_RAG as string | null;
+    const products = rows.map((row) => {
+      const description = row.DESCRIPTION_VECTOR_RAG ?? null;
 
       return {
         name: extractField(description, "NOMBRE") || "Producto sin nombre",
