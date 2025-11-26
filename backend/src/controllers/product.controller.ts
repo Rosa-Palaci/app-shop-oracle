@@ -12,9 +12,10 @@ export async function getProducts(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Error fetching products:", error);
-    return res.status(500).json({
+    const message = error instanceof Error ? error.message : "Error fetching products";
+    return res.status(503).json({
       success: false,
-      error: "Error fetching products",
+      error: message,
     });
   }
 }
