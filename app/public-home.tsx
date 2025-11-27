@@ -19,33 +19,58 @@ import { Colors } from "../constants/theme";
 const RED = "#EA0040";
 const { width } = Dimensions.get("window");
 
-// Fake Data (carousel)
-const carouselItems = [
-  require("@/assets/images/react-logo.png"),
-  require("@/assets/images/icon.png"),
-  require("@/assets/images/partial-react-logo.png"),
-];
+type Product = {
+  articleId: number;
+  imageUrl: string | null;
+  descriptionVector: string | null;
+};
 
 export default function PublicHomeScreen() {
   const carouselRef = useRef<FlatList<any> | null>(null);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [carouselItems, setCarouselItems] = useState<Product[]>([]);
 
-  // Auto-carrusel
+  // 🔹 Fetch a tu API de productos
   useEffect(() => {
-    const interval = setInterval(() => {
-      let next = (currentIndex + 1) % carouselItems.length;
-      setCurrentIndex(next);
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch("http://localhost:3000/api/products");
+        const json = await res.json();
 
-      carouselRef.current?.scrollToIndex({
-        index: next,
-        animated: true,
+        if (json.success && Array.isArray(json.data)) {
+          setCarouselItems(json.data);
+        } else {
+          console.warn("Respuesta inesperada de /api/products:", json);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // 🔹 Auto-carrusel (solo si hay items)
+  useEffect(() => {
+    if (!carouselItems.length) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => {
+        const next = (prev + 1) % carouselItems.length;
+
+        carouselRef.current?.scrollToIndex({
+          index: next,
+          animated: true,
+        });
+
+        return next;
       });
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [currentIndex]);
+  }, [carouselItems.length]);
 
   return (
     <>
@@ -92,19 +117,33 @@ export default function PublicHomeScreen() {
           {/* CAROUSEL */}
           <Text style={styles.sectionTitle}>Ofertas del día</Text>
 
-          <Animated.FlatList
-            ref={carouselRef}
-            data={carouselItems}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(_, index) => index.toString()}
-            renderItem={({ item }) => (
-              <View style={styles.carouselItem}>
-                <Image source={item} style={styles.carouselImage} />
-              </View>
-            )}
-          />
+          {carouselItems.length > 0 ? (
+            <Animated.FlatList
+              ref={carouselRef}
+              data={carouselItems}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.articleId.toString()}
+              renderItem={({ item }) => (
+                <View style={styles.carouselItem}>
+                  {item.imageUrl ? (
+                    <Image
+                      source={{ uri: item.imageUrl }}
+                      style={styles.carouselImage}
+                    />
+                  ) : (
+                    <Text>Sin imagen</Text>
+                  )}
+                </View>
+              )}
+            />
+          ) : (
+            // Opcional: placeholder mientras carga
+            <View style={[styles.carouselItem, { alignSelf: "center" }]}>
+              <Text>Cargando ofertas...</Text>
+            </View>
+          )}
 
           {/* CAJA DE REGISTRO */}
           <View style={styles.registerBox}>
@@ -177,20 +216,22 @@ const styles = StyleSheet.create({
   },
 
   carouselItem: {
-    width: width * 0.8,
-    height: 220,
-    marginHorizontal: width * 0.1,
-    backgroundColor: "#fafafa",
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  width: width * 0.8,
+  height: 250,
+  marginHorizontal: width * 0.1,
+  backgroundColor: "#fafafa",
+  borderRadius: 20,
+  overflow: "hidden",
+  justifyContent: "center",
+  alignItems: "center",
+},
 
   carouselImage: {
-    width: "70%",
-    height: "70%",
-    resizeMode: "contain",
-  },
+  borderRadius: 20,
+  resizeMode: "contain",
+  width: "100%",
+  height: "100%"
+},
 
   registerBox: {
     marginTop: 30,
