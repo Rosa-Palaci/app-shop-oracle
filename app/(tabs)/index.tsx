@@ -104,10 +104,6 @@ export default function HomeScreen() {
           pagingEnabled
           keyExtractor={(_, index) => index.toString()}
           showsHorizontalScrollIndicator={false}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-            { useNativeDriver: false }
-          )}
           renderItem={({ item }) => (
             <View style={styles.carouselItem}>
               <Image source={item} style={styles.carouselImage} />
@@ -139,6 +135,17 @@ export default function HomeScreen() {
           ))}
         </View>
       </ScrollView>
+
+      {/* ⭐ BOTÓN FLOTANTE DEL CHAT ⭐ */}
+      <TouchableOpacity
+        style={styles.chatButton}
+        onPress={() => router.push("/chat")}
+      >
+        <Image
+          source={require("@/assets/images/chat-icon.png")}
+          style={styles.chatIcon}
+        />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -195,9 +202,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     elevation: 3,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
   },
 
   carouselImage: {
@@ -220,7 +224,6 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     marginBottom: 20,
     alignItems: "center",
-    elevation: 2,
   },
 
   cardImg: {
@@ -234,5 +237,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     textAlign: "center",
+  },
+
+  // ⭐ CHAT BUTTON
+  chatButton: {
+    position: "absolute",
+    bottom: 30,
+    right: 30,
+    backgroundColor: RED,
+    width: 65,
+    height: 65,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
+  },
+
+  chatIcon: {
+    width: 55,
+    height: 55,
+    tintColor: "#fff",
   },
 });
