@@ -15,24 +15,25 @@ export async function getProductsService() {
 
     const query = `
       SELECT 
-        article_id, 
-        img_url_Team3, 
-        description_vector_rag
-      FROM admin.articles_modified
-      FETCH FIRST 20 ROWS ONLY
+        "article_id", 
+        "img_url_team3", 
+        "description_vector_rag"
+FROM admin.articles_modified
+FETCH FIRST 20 ROWS ONLY;
     `;
 
     const result = await connection.execute(query, [], {
       outFormat: oracledb.OUT_FORMAT_OBJECT,
     });
 
-    const rows = (result.rows as OracleProductRow[]) ?? [];
+    const rows = result.rows ?? [];
 
-    return rows.map((row: OracleProductRow) => ({
-      articleId: row.ARTICLE_ID ?? null,
-      imageUrl: row.IMG_URL_TEAM3 ?? null,
-      descriptionVector: row.DESCRIPTION_VECTOR_RAG ?? null,
-    }));
+return rows.map((row: any) => ({
+  articleId: row.article_id ?? null,
+  imageUrl: row.img_url_team3 ?? null,
+  descriptionVector: row.description_vector_rag ?? null,
+}));
+
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     throw { success: false, error: message };
