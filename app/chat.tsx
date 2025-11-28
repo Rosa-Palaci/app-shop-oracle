@@ -1,7 +1,7 @@
+// app/chat.tsx
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
-import { Alert } from "react-native";
 import {
   Image,
   ScrollView,
@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { useChat } from "../hooks/useChat";
+import { useCartStore } from "../stores/useCartStore";
 
 const RED = "#EA0040";
 
@@ -20,6 +21,8 @@ export default function ChatScreen() {
   const [message, setMessage] = useState("");
 
   const scrollRef = useRef<ScrollView>(null);
+
+  const addItem = useCartStore((state) => state.addItem);
 
   const handleSend = () => {
     if (!message.trim()) return;
@@ -31,14 +34,50 @@ export default function ChatScreen() {
     }, 200);
   };
 
-  // 🔹 Navegar al detalle del producto desde el chat
-  const handleBuyNow = (item: any) => {
+  const buildDescriptionFromChat = (item: any) => {
+    const parts: string[] = [];
+
+    if (item.name) {
+      parts.push(`NOMBRE: ${item.name};`);
+    }
+    if (item.group) {
+      parts.push(` GRUPO: ${item.group};`);
+    }
+    if (item.color) {
+      parts.push(` COLOR: ${item.color};`);
+    }
+    if (item.type) {
+      parts.push(` TIPO: ${item.type};`);
+    }
+    if (item.detail || item.details || item.description) {
+      const detailValue =
+        item.detail ?? item.details ?? item.description;
+      parts.push(` DETALLE: ${detailValue};`);
+    }
+
+    const result = parts.join(" ").trim();
+    return result || "NOMBRE: Producto;";
+  };
+
+  // Comprar ahora → agregar al carrito + mandar a /cart
+  const handleAddToCartFromChat = (item: any) => {
+    addItem({
+      articleId: Number(item.article_id),
+      imageUrl: item.image_url ?? "",
+      description: item.description_vector ?? buildDescriptionFromChat(item),
+    });
+
+    router.push("/cart");
+  };
+
+  // Ver detalle → mandar a /product/[id]
+  const handleOpenDetailFromChat = (item: any) => {
     router.push({
       pathname: "/product/[id]",
       params: {
         id: String(item.article_id),
         imageUrl: item.image_url ?? "",
-        description: item.description_vector ?? "", // si tu API lo manda
+        description: item.description_vector ?? buildDescriptionFromChat(item),
       },
     });
   };
@@ -80,22 +119,29 @@ export default function ChatScreen() {
             {msg.products && (
               <View style={styles.cardList}>
                 {msg.products.map((item: any) => (
-                  <View style={styles.card} key={item.article_id}>
-                    <Image
-                      source={{ uri: item.image_url }}
-                      style={styles.cardImage}
-                    />
+                  <View key={item.article_id} style={styles.card}>
+                    {/* Imagen clickeable → detalle */}
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={() => handleOpenDetailFromChat(item)}
+                    >
+                      <Image
+                        source={{ uri: item.image_url }}
+                        style={styles.cardImage}
+                      />
+                    </TouchableOpacity>
+
                     <Text style={styles.cardName}>{item.name}</Text>
                     <Text style={styles.cardGroup}>{item.group}</Text>
 
-                    {/* Botón COMPRAR AHORA */}
+                    {/* Botón COMPRAR AHORA → carrito */}
                     <TouchableOpacity
-  style={styles.buyButton}
-  onPress={() => Alert.alert("Producto listo para comprar")}
->
-  <Text style={styles.buyButtonText}>Comprar ahora</Text>
-</TouchableOpacity>
-
+                      style={styles.buyButton}
+                      activeOpacity={0.85}
+                      onPress={() => handleAddToCartFromChat(item)}
+                    >
+                      <Text style={styles.buyButtonText}>Comprar ahora</Text>
+                    </TouchableOpacity>
                   </View>
                 ))}
               </View>
@@ -120,6 +166,7 @@ export default function ChatScreen() {
         </TouchableOpacity>
       </View>
     </View>
+    
   );
 }
 
@@ -224,15 +271,14 @@ const styles = StyleSheet.create({
 
   cardGroup: {
     paddingHorizontal: 8,
-    paddingBottom: 8,
     color: "#888",
+    marginBottom: 6,
   },
 
   buyButton: {
     backgroundColor: RED,
     marginHorizontal: 8,
     marginBottom: 10,
-    marginTop: 4,
     borderRadius: 10,
     paddingVertical: 8,
     alignItems: "center",

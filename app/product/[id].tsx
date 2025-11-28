@@ -21,7 +21,8 @@ type ApiProduct = {
   descriptionVector: string | null;
 };
 
-// Extraer información de descriptionVector
+// 🔹 Parsea la descripción tipo:
+// NOMBRE: ...; GRUPO: ...; COLOR: ...; TIPO: ...; DETALLE: ...
 const parseDescription = (text?: string | null) => {
   if (!text) {
     return { name: "Producto", group: "", color: "", type: "", detail: "" };
@@ -57,11 +58,12 @@ export default function ProductDetailScreen() {
 
   const addItem = useCartStore((state) => state.addItem);
 
+  // 🔹 Aquí ya sale todo lo que venga en la descripción
   const { name, group, color, type, detail } = parseDescription(description);
 
   const [similarProducts, setSimilarProducts] = useState<ApiProduct[]>([]);
 
-  // Cargar productos similares desde la API
+  // Productos similares (no tocamos esto)
   useEffect(() => {
     const fetchSimilar = async () => {
       try {
@@ -74,19 +76,14 @@ export default function ProductDetailScreen() {
         }
 
         const all: ApiProduct[] = json.data;
-
-        // 👇 Quitamos el producto actual y tomamos los primeros 10
         const others = all.filter((p) => p.articleId !== Number(id));
-
         setSimilarProducts(others.slice(0, 10));
       } catch (error) {
         console.error("Error cargando productos similares:", error);
       }
     };
 
-    if (id) {
-      fetchSimilar();
-    }
+    if (id) fetchSimilar();
   }, [id]);
 
   const handleAddToCart = () => {
@@ -115,71 +112,67 @@ export default function ProductDetailScreen() {
 
   return (
     <>
-      {/* Ocultamos header nativo */}
       <Stack.Screen options={{ headerShown: false }} />
 
       <SafeAreaView style={styles.safeArea}>
-        {/* Flecha de regreso */}
-        <IconButton
-          icon="arrow-left"
-          size={30}
-          iconColor={RED}
-          onPress={() => router.back()}
+        {/* Flecha */}
+        <TouchableOpacity
           style={styles.backButton}
-        />
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <IconButton icon="arrow-left" size={30} iconColor={RED} />
+        </TouchableOpacity>
 
         <ScrollView contentContainerStyle={styles.content}>
-          {/* CARD PRINCIPAL */}
-          <View style={styles.card}>
-            {/* Imagen */}
-            {imageUrl ? (
-              <Image source={{ uri: imageUrl }} style={styles.image} />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <Text>Sin imagen</Text>
-              </View>
-            )}
-
-            {/* Título con el nombre del producto */}
-            <Text style={styles.title}>{name}</Text>
-
-            {/* Cajita bonita con info */}
-            <View style={styles.infoBox}>
-              {group ? (
-                <Text style={styles.infoText}>
-                  <Text style={styles.infoLabel}>Grupo: </Text> {group}
-                </Text>
-              ) : null}
-
-              {color ? (
-                <Text style={styles.infoText}>
-                  <Text style={styles.infoLabel}>Color: </Text> {color}
-                </Text>
-              ) : null}
-
-              {type ? (
-                <Text style={styles.infoText}>
-                  <Text style={styles.infoLabel}>Tipo: </Text> {type}
-                </Text>
-              ) : null}
-
-              {detail ? (
-                <Text style={[styles.infoText, { marginTop: 8 }]}>
-                  <Text style={styles.infoLabel}>Detalle: </Text> {detail}
-                </Text>
-              ) : null}
+          {/* Imagen */}
+          {imageUrl ? (
+            <Image source={{ uri: imageUrl }} style={styles.image} />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Text>Sin imagen</Text>
             </View>
+          )}
 
-            {/* Botón agregar al carrito */}
-            <TouchableOpacity
-              style={styles.addCartButton}
-              onPress={handleAddToCart}
-            >
-              <Text style={styles.addCartText}>Agregar al carrito 🛒</Text>
-            </TouchableOpacity>
+          {/* Título */}
+          <Text style={styles.title}>{name}</Text>
+
+          {/* Cajita con info estructurada */}
+          <View style={styles.infoBox}>
+            {group ? (
+              <Text style={styles.infoText}>
+                <Text style={styles.infoLabel}>Grupo: </Text> {group}
+              </Text>
+            ) : null}
+
+            {color ? (
+              <Text style={styles.infoText}>
+                <Text style={styles.infoLabel}>Color: </Text> {color}
+              </Text>
+            ) : null}
+
+            {type ? (
+              <Text style={styles.infoText}>
+                <Text style={styles.infoLabel}>Tipo: </Text> {type}
+              </Text>
+            ) : null}
+
+            {detail ? (
+              <Text style={[styles.infoText, { marginTop: 8 }]}>
+                <Text style={styles.infoLabel}>Detalle: </Text> {detail}
+              </Text>
+            ) : null}
           </View>
 
-          {/* SECCIÓN DE PRODUCTOS SIMILARES (reales) */}
+          {/* Botón agregar al carrito */}
+          <TouchableOpacity
+            style={styles.addCartButton}
+            onPress={handleAddToCart}
+          >
+            <Text style={styles.addCartText}>Agregar al carrito</Text>
+          </TouchableOpacity>
+
+          {/* PRODUCTOS SIMILARES */}
           {similarProducts.length > 0 && (
             <>
               <Text style={styles.similarTitle}>Productos similares</Text>
@@ -190,7 +183,7 @@ export default function ProductDetailScreen() {
                 contentContainerStyle={styles.similarList}
               >
                 {similarProducts.map((p) => (
-                  <View key={p.articleId.toString()} style={styles.similarCard}>
+                  <View key={p.articleId} style={styles.similarCard}>
                     <TouchableOpacity
                       activeOpacity={0.8}
                       onPress={() => handleOpenSimilar(p)}
@@ -212,7 +205,6 @@ export default function ProductDetailScreen() {
                       </Text>
                     </TouchableOpacity>
 
-                    {/* Botón COMPRAR */}
                     <TouchableOpacity
                       style={styles.buyButton}
                       onPress={() => handleOpenSimilar(p)}
@@ -235,99 +227,78 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
-
   backButton: {
     position: "absolute",
     top: 50,
     left: 20,
-    zIndex: 10,
+    zIndex: 20,
   },
-
   content: {
     padding: 16,
-    paddingTop: 100, // espacio para la flecha
+    paddingTop: 50,
     paddingBottom: 40,
   },
-
-  card: {
-    backgroundColor: "#fafafa",
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 24,
-  },
-
   image: {
     width: "100%",
     height: 280,
     borderRadius: 16,
-    marginBottom: 20,
     resizeMode: "cover",
   },
-
   imagePlaceholder: {
     width: "100%",
     height: 280,
     borderRadius: 16,
-    marginBottom: 20,
     backgroundColor: "#eee",
     justifyContent: "center",
     alignItems: "center",
   },
-
   title: {
     fontSize: 24,
     fontWeight: "800",
-    marginBottom: 14,
     color: RED,
     textAlign: "center",
+    marginTop: 16,
+    marginBottom: 16,
   },
-
   infoBox: {
     backgroundColor: "#fff",
     borderRadius: 14,
     padding: 14,
-    marginBottom: 20,
     borderWidth: 1,
     borderColor: "#f0f0f0",
+    marginBottom: 20,
   },
-
   infoText: {
     fontSize: 15,
     color: "#333",
     lineHeight: 22,
+    marginBottom: 4,
   },
-
   infoLabel: {
     fontWeight: "700",
     color: RED,
   },
-
   addCartButton: {
     backgroundColor: RED,
     paddingVertical: 14,
     borderRadius: 14,
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: 24,
   },
-
   addCartText: {
+    color: "#fff",
     fontSize: 16,
     fontWeight: "700",
-    color: "#fff",
   },
-
-  // Estilos productos similares
   similarTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#333",
     marginBottom: 12,
+    color: "#333",
   },
-
   similarList: {
     paddingBottom: 10,
   },
-
   similarCard: {
     width: 140,
     marginRight: 12,
@@ -336,32 +307,26 @@ const styles = StyleSheet.create({
     padding: 10,
     alignItems: "center",
   },
-
   similarImage: {
     width: "100%",
     height: 100,
     borderRadius: 12,
     marginBottom: 8,
-    resizeMode: "cover",
   },
-
   similarImagePlaceholder: {
     width: "100%",
     height: 100,
     borderRadius: 12,
-    marginBottom: 8,
     backgroundColor: "#eee",
     justifyContent: "center",
     alignItems: "center",
   },
-
   similarName: {
     fontSize: 13,
     fontWeight: "500",
     textAlign: "center",
     color: "#333",
   },
-
   buyButton: {
     marginTop: 8,
     backgroundColor: RED,
@@ -370,7 +335,6 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
   },
-
   buyButtonText: {
     color: "#fff",
     fontWeight: "700",
