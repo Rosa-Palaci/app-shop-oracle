@@ -1,5 +1,32 @@
 import { API_BASE_URL } from "../constants/api";
 
+export async function sendOdaMessage(text: string, userId: string) {
+  const response = await fetch(`${API_BASE_URL}/api/chat/oda`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ text, userId }),
+  });
+
+  if (!response.ok) {
+    let errorMessage = `ODA API error: ${response.status}`;
+
+    try {
+      const errorBody = await response.json();
+      if (errorBody?.error) {
+        errorMessage = `${errorMessage} - ${errorBody.error}`;
+      }
+    } catch (parseError) {
+      // ignore JSON parse errors and fall back to status message
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+}
+
 export async function searchProducts(customer_id: string, query_text: string) {
   const response = await fetch(`${API_BASE_URL}/api/chat/search`, {
     method: "POST",

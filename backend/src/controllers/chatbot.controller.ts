@@ -3,6 +3,7 @@ import {
   retailAiRecommend,
   retailAiSearch,
 } from "../services/retailAi.service";
+import { OdaRequestError, sendMessageToOda } from "../services/oda.service";
 
 export async function chatbotSearch(req: Request, res: Response) {
   try {
@@ -39,5 +40,36 @@ export async function chatbotRecommend(req: Request, res: Response) {
   } catch (error) {
     console.error("Error en chatbotRecommend:", error);
     return res.status(500).json({ error: "Error en el chatbot (recommend)" });
+  }
+}
+
+export async function chatbotOdaMessage(req: Request, res: Response) {
+  try {
+    const { text, userId } = req.body;
+
+    if (!text || !userId) {
+      return res
+        .status(400)
+        .json({ error: "text y userId son requeridos para ODA" });
+    }
+
+    const ack = await sendMessageToOda(text, userId);
+
+    return res.json({
+      success: true,
+      ack,
+    });
+  } catch (error) {
+    console.error("Error en chatbotOdaMessage:", error);
+    if (error instanceof OdaRequestError) {
+      return res.status(error.status ?? 502).json({
+        error: error.message,
+        details: error.details,
+      });
+    }
+
+    return res.status(500).json({
+      error: "Error enviando mensaje al asistente ODA",
+    });
   }
 }
