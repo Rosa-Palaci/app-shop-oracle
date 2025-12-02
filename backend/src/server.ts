@@ -16,7 +16,7 @@ import productRoutes from "./routes/product.routes";
 import chatbotRoutes from "./routes/chatbot.routes";
 import purchasesRoutes from "./routes/purchases.routes";
 import categoryRoutes from "./routes/category.routes";
-
+import recommendRoutes from "./routes/recommend.routes";
 
 
 app.use("/api/customer", customerRoutes);
@@ -24,6 +24,7 @@ app.use("/api", productRoutes);
 app.use("/api", chatbotRoutes);
 app.use("/api", purchasesRoutes);
 app.use("/api", categoryRoutes);
+app.use("/api", recommendRoutes);
 
 async function startServer() {
   try {

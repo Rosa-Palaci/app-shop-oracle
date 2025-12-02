@@ -12,8 +12,10 @@ import {
 } from "react-native";
 import { IconButton } from "react-native-paper";
 import { useCartStore } from "../../stores/useCartStore";
+import { useAuthStore } from "../../stores/useAuthStore";
 
 const RED = "#EA0040";
+const API_BASE = "http://localhost:3000";
 
 type ApiProduct = {
   articleId: number;
@@ -57,34 +59,51 @@ export default function ProductDetailScreen() {
   const description = params.description ?? "";
 
   const addItem = useCartStore((state) => state.addItem);
+  const customerId = useAuthStore((state: any) => state.customer_id);
 
   // 🔹 Aquí ya sale todo lo que venga en la descripción
   const { name, group, color, type, detail } = parseDescription(description);
 
   const [similarProducts, setSimilarProducts] = useState<ApiProduct[]>([]);
 
-  // Productos similares (no tocamos esto)
+  // 🔹 Productos similares usando el servicio de recomendaciones
   useEffect(() => {
     const fetchSimilar = async () => {
-      try {
-        const res = await fetch("http://localhost:3000/api/products");
-        const json = await res.json();
+      if (!id || !customerId) {
+        console.log("Sin id o sin customerId, no pido recomendaciones");
+        return;
+      }
 
-        if (!json.success || !Array.isArray(json.data)) {
-          console.warn("Respuesta inesperada de /api/products:", json);
+      try {
+        const res = await fetch(`${API_BASE}/api/recommend-related`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customerId,
+            articleId: Number(id),
+          }),
+        });
+
+        const json = await res.json();
+        console.log("Respuesta /api/recommend-related:", json);
+
+        if (!res.ok || !json.success) {
+          console.warn("Error en recommend-related:", json);
           return;
         }
 
-        const all: ApiProduct[] = json.data;
-        const others = all.filter((p) => p.articleId !== Number(id));
-        setSimilarProducts(others.slice(0, 10));
+        if (Array.isArray(json.data)) {
+          setSimilarProducts(json.data);
+        }
       } catch (error) {
         console.error("Error cargando productos similares:", error);
       }
     };
 
-    if (id) fetchSimilar();
-  }, [id]);
+    fetchSimilar();
+  }, [id, customerId]);
 
   const handleAddToCart = () => {
     addItem({
@@ -297,22 +316,28 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   similarList: {
-    paddingBottom: 10,
-  },
-  similarCard: {
-    width: 140,
-    marginRight: 12,
-    backgroundColor: "#fafafa",
-    borderRadius: 16,
-    padding: 10,
-    alignItems: "center",
-  },
-  similarImage: {
-    width: "100%",
-    height: 100,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
+  paddingBottom: 10,
+},
+
+similarCard: {
+  width: 160,
+  height: 230, 
+  marginRight: 14,
+  backgroundColor: "#fafafa",
+  borderRadius: 16,
+  padding: 12,
+  alignItems: "center",
+  justifyContent: "space-between",
+  overflow: "hidden",
+},
+
+similarImage: {
+  width: "100%",
+  height: 120,
+  borderRadius: 12,
+  marginBottom: 6,
+  resizeMode: "cover",
+},
   similarImagePlaceholder: {
     width: "100%",
     height: 100,
@@ -322,19 +347,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   similarName: {
-    fontSize: 13,
-    fontWeight: "500",
-    textAlign: "center",
-    color: "#333",
-  },
-  buyButton: {
-    marginTop: 8,
-    backgroundColor: RED,
-    paddingVertical: 8,
-    borderRadius: 10,
-    width: "100%",
-    alignItems: "center",
-  },
+  fontSize: 14,
+  fontWeight: "600",
+  textAlign: "center",
+  color: "#333",
+  height: 40, 
+},
+
+buyButton: {
+  backgroundColor: RED,
+  paddingVertical: 8,
+  borderRadius: 10,
+  width: "100%",
+  alignItems: "center",
+},
   buyButtonText: {
     color: "#fff",
     fontWeight: "700",
