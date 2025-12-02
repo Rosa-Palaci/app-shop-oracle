@@ -9,9 +9,9 @@ import {
   Text,
   View,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import { IconButton } from "react-native-paper";
-// Ajusta la ruta según la ubicación real de useAuthStore
 import { useAuthStore } from "../../stores/useAuthStore";
 
 const RED = "#EA0040";
@@ -23,16 +23,30 @@ type Purchase = {
   price: number;
   year: number;
   month: number;
-  dayOfWeek: number;
   day: number;
-  priceScaled: number;
-  channel: number;
+  priceScaled?: number;
+  channel?: number;
+  imgUrl?: string | null;
+  descriptionVector?: string | null;
 };
+
+/**
+ * Extrae el NOMBRE del campo descriptionVector
+ * Ej: "NOMBRE: SULIMA jkt; GRUPO: ... " -> "SULIMA jkt"
+ */
+function getNameFromDescription(text?: string | null): string {
+  if (!text) return "Producto";
+
+  const match = text.match(/NOMBRE:\s*([^;]+)/i);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+
+  return "Producto";
+}
 
 export default function HistoryScreen() {
   const router = useRouter();
-
-  // 👇 tipamos el parámetro como any para quitar el error ts(7006)
   const customerId = useAuthStore((state: any) => state.customer_id);
 
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -85,22 +99,34 @@ export default function HistoryScreen() {
     return `${dd}/${mm}/${yyyy}`;
   };
 
-  const renderItem = ({ item }: { item: Purchase }) => (
-    <View style={styles.card}>
-      <View style={styles.cardLeft}>
-        <Text style={styles.articleId}>Artículo #{item.articleId}</Text>
-        <Text style={styles.dateText}>Fecha: {formatDate(item)}</Text>
-        <Text style={styles.channelText}>
-          Canal: {item.channel === 1 ? "Tienda física" : "Online"}
-        </Text>
-      </View>
+  const renderItem = ({ item }: { item: Purchase }) => {
+    const name = getNameFromDescription(item.descriptionVector);
 
-      <View style={styles.cardRight}>
-        <Text style={styles.priceLabel}>Precio</Text>
-        <Text style={styles.priceValue}>${item.price.toFixed(2)}</Text>
+    return (
+      <View style={styles.card}>
+        {/* Imagen ajustada al alto de la fila */}
+        {item.imgUrl ? (
+          <Image source={{ uri: item.imgUrl }} style={styles.cardImage} />
+        ) : (
+          <View style={styles.imagePlaceholder}>
+            <Text style={styles.imagePlaceholderText}>Sin imagen</Text>
+          </View>
+        )}
+
+        {/* Info principal */}
+        <View style={styles.cardLeft}>
+          <Text style={styles.articleName}>{name}</Text>
+          <Text style={styles.dateText}>Fecha: {formatDate(item)}</Text>
+        </View>
+
+        {/* Precio */}
+        <View style={styles.cardRight}>
+          <Text style={styles.priceLabel}>Precio</Text>
+          <Text style={styles.priceValue}>${item.price.toFixed(2)}</Text>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <>
@@ -198,9 +224,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 24,
   },
+
   card: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
     backgroundColor: "#fafafa",
     borderRadius: 16,
     padding: 14,
@@ -211,10 +238,33 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  cardLeft: {
-    flexShrink: 1,
+
+  cardImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    marginRight: 12,
+    backgroundColor: "#eee",
   },
-  articleId: {
+
+  imagePlaceholder: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    marginRight: 12,
+    backgroundColor: "#eee",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  imagePlaceholderText: {
+    fontSize: 11,
+    color: "#999",
+  },
+
+  cardLeft: {
+    flex: 1,
+  },
+  articleName: {
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 4,
@@ -223,15 +273,12 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 14,
     color: "#555",
-    marginBottom: 2,
   },
-  channelText: {
-    fontSize: 13,
-    color: "#888",
-  },
+
   cardRight: {
     alignItems: "flex-end",
     justifyContent: "center",
+    marginLeft: 8,
   },
   priceLabel: {
     fontSize: 13,
