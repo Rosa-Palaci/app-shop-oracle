@@ -43,7 +43,7 @@ export function useChat() {
       const botMessage: ChatMessage = {
         id: Date.now().toString() + "-bot",
         sender: "bot",
-        text: `Encontré ${response.results.length} opciones para ti 💜`,
+        text: `Encontré ${response.results.length} opciones para ti`,
         products: response.results,
       };
 
@@ -52,7 +52,7 @@ export function useChat() {
       addMessage({
         id: Date.now().toString() + "-error",
         sender: "bot",
-        text: "Lo siento, hubo un error procesando tu búsqueda 😢",
+        text: "Lo siento, hubo un error procesando tu búsqueda",
       });
       console.error("Chat error:", error);
     }
@@ -72,7 +72,7 @@ export function useChat() {
       const botMessage: ChatMessage = {
         id: Date.now().toString() + "-rec",
         sender: "bot",
-        text: "Te dejo algunas recomendaciones basadas en tu estilo 💫",
+        text: "Te dejo algunas recomendaciones basadas en tu estilo",
         products: response.recommendations,
       };
 
@@ -81,7 +81,7 @@ export function useChat() {
       addMessage({
         id: Date.now().toString() + "-error",
         sender: "bot",
-        text: "No pude obtener recomendaciones 😢",
+        text: "No pude obtener recomendaciones en este momento",
       });
     }
 
