@@ -1,4 +1,4 @@
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 
 export async function sendMessageToOda(
   text: string,
@@ -29,13 +29,14 @@ export async function sendMessageToOda(
 
     console.log("Respuesta ODA:", data);
 
-    return data?.message?.text || "No response from ODA";
+    const parsed = data as any;
+    return parsed?.message?.text || "No response from ODA";
   } catch (error) {
-    const err = error as AxiosError;
+    const err = error as any;
 
     console.error("❌ Error enviando mensaje a ODA:");
-    console.error("Status:", err.response?.status);
-    console.error("Body:", err.response?.data);
+    console.error("Status:", err?.response?.status);
+    console.error("Body:", err?.response?.data);
 
     throw error;
   }

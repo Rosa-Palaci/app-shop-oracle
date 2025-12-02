@@ -5,6 +5,16 @@ import {
 } from "../services/retailAi.service";
 import { sendMessageToOda } from "../services/oda.service";
 
+type AxiosLikeError = {
+  isAxiosError?: boolean;
+  response?: {
+    status?: number;
+    statusText?: string;
+    data?: unknown;
+  };
+  message: string;
+};
+
 export async function chatbotSearch(req: Request, res: Response) {
   try {
     const { customer_id, query_text } = req.body;
@@ -45,24 +55,39 @@ export async function chatbotRecommend(req: Request, res: Response) {
 
 export async function chatbotOdaMessage(req: Request, res: Response) {
   try {
-    const { text, userId } = req.body;
+    const { text, userId } = req.body ?? {};
 
-    if (!text || !userId) {
-      return res
-        .status(400)
-        .json({ error: "text y userId son requeridos para ODA" });
+    if (typeof text !== "string" || !text.trim() || typeof userId !== "string") {
+      return res.status(400).json({
+        error: "text (string) y userId (string) son requeridos para ODA",
+      });
     }
 
-    const ack = await sendMessageToOda(text, userId);
+    const ack = await sendMessageToOda(text.trim(), userId.trim());
 
     return res.json({
       success: true,
       ack,
     });
   } catch (error) {
-    console.error("Error en chatbotOdaMessage:", error);
-    return res
-      .status(500)
-      .json({ error: "Error enviando mensaje al asistente ODA" });
+    const axiosError = error as AxiosLikeError;
+    if (axiosError?.isAxiosError) {
+      console.error("Error en chatbotOdaMessage (Axios)", {
+        status: axiosError.response?.status,
+        statusText: axiosError.response?.statusText,
+        data: axiosError.response?.data,
+      });
+
+      const statusCode = axiosError.response?.status ?? 502;
+      return res.status(statusCode).json({
+        error: "Error enviando mensaje al asistente ODA",
+        details: axiosError.response?.data ?? axiosError.message,
+      });
+    }
+
+    console.error("Error inesperado en chatbotOdaMessage:", error);
+    return res.status(500).json({
+      error: "Error inesperado enviando mensaje al asistente ODA",
+    });
   }
 }
