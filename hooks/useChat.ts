@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { recommendProducts, searchProducts } from "../services/chatApi";
+import { recommendProducts, sendOdaMessage } from "../services/chatApi";
 import { useAuthStore } from "../stores/useAuthStore";
 
 export interface ChatMessage {
@@ -37,22 +37,23 @@ export function useChat() {
     setLoading(true);
 
     try {
-      // --- Llamada al API de búsqueda ---
-      const response = await searchProducts(customer_id, text);
+      // Envía el mensaje al asistente de Oracle Digital Assistant (ODA)
+      const response = await sendOdaMessage(text, customer_id);
 
-      const botMessage: ChatMessage = {
+      addMessage({
         id: Date.now().toString() + "-bot",
         sender: "bot",
-        text: `Encontré ${response.results.length} opciones para ti 💜`,
-        products: response.results,
-      };
-
-      addMessage(botMessage);
+        text:
+          response?.ack?.status ||
+          (response?.ack?.accepted
+            ? "Mensaje recibido por ODA."
+            : "Mensaje enviado, esperando respuesta de ODA."),
+      });
     } catch (error: any) {
       addMessage({
         id: Date.now().toString() + "-error",
         sender: "bot",
-        text: "Lo siento, hubo un error procesando tu búsqueda 😢",
+        text: "Lo siento, hubo un error enviando tu mensaje a ODA 😢",
       });
       console.error("Chat error:", error);
     }
