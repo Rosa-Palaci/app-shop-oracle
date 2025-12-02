@@ -3,42 +3,47 @@ import axios, { AxiosError } from "axios";
 export type OdaAckResponse = {
   status?: string;
   accepted?: boolean;
+  message?: { text?: string };
 };
 
 export async function sendMessageToOda(
   text: string,
   userId: string
 ): Promise<OdaAckResponse> {
-  if (!process.env.ODA_WEBHOOK_URL) {
+  const ODA_URL = process.env.ODA_WEBHOOK_URL;
+  const ODA_SECRET = process.env.ODA_SECRET;
+
+  if (!ODA_URL || !ODA_SECRET) {
     throw new Error("ODA configuration is missing");
   }
 
-  const endpoint = `${process.env.ODA_WEBHOOK_URL}/messages`;
-
+  // 🔹 Payload correcto para canales Webhook de ODA
   const payload = {
-    userId: userId,
+    userId,
     messagePayload: {
       type: "text",
-      text: text,
+      text,
     },
   };
 
   try {
-    console.log(`Enviando mensaje a: ${endpoint}`);
+    console.log(`👉 Enviando mensaje a ODA: ${ODA_URL}`);
+    console.log("Payload:", JSON.stringify(payload));
 
     const { data, status } = await axios.post<OdaAckResponse>(
-      endpoint,
+      ODA_URL, // Se envía sin /messages
       payload,
       {
         headers: {
           "Content-Type": "application/json",
+          "X-Hub-Signature": ODA_SECRET, // Necesario para autenticación
         },
       }
     );
 
-    console.log("✅ ¡ÉXITO! Mensaje recibido por ODA.");
-    console.log("Status Code:", status);
-    console.log("Respuesta del servidor:", JSON.stringify(data));
+    console.log("✅ ¡Mensaje enviado con éxito a ODA!");
+    console.log("Status:", status);
+    console.log("Respuesta:", JSON.stringify(data));
 
     return data;
   } catch (error) {
