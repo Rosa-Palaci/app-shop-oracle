@@ -14,10 +14,12 @@ app.use(express.json());
 import customerRoutes from "./routes/customer.routes";
 import productRoutes from "./routes/product.routes";
 import chatbotRoutes from "./routes/chatbot.routes";
+import purchasesRoutes from "./routes/purchases.routes";
 
 app.use("/api/customer", customerRoutes);
 app.use("/api", productRoutes);
 app.use("/api", chatbotRoutes);
+app.use("/api", purchasesRoutes);
 
 async function startServer() {
   try {

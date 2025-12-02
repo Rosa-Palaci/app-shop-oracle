@@ -3,6 +3,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { router } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const { logout } = useAuthStore();
@@ -19,13 +20,16 @@ export default function ProfileScreen() {
 
       {/* SECCIÓN DE OPCIONES */}
       <View style={styles.section}>
-        {/* Mis compras */}
-        <TouchableOpacity style={styles.option}>
+        {/* ✅ MIS COMPRAS → HISTORIAL */}
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() => router.push("/settings/history")}
+        >
           <IconSymbol name="bag.fill" size={26} color="#EA0040" />
           <Text style={styles.optionText}>Mis compras</Text>
         </TouchableOpacity>
 
-        {/* Configuración */}
+        {/* Configuración (por ahora sin navegación) */}
         <TouchableOpacity style={styles.option}>
           <IconSymbol name="gearshape.fill" size={26} color="#EA0040" />
           <Text style={styles.optionText}>Configuración</Text>
