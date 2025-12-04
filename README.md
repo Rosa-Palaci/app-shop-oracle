@@ -6,13 +6,13 @@ Aplicación móvil desarrollada con **Expo** y **React Native** para ofrecer una
 
 | Nombre | Matrícula |
 | --- | --- |
-| Rosa Vanessa Palacios Beltrán | A01824522 |
-| Virly Itzel López Soto | A01656342 |
-| Diego Aguilar Flores | A01651294 |
-| Santiago Caballero Ortega | A01651992 |
-| Cynthia Andrea Soriano González | A01650848 |
-| Pedro Daniel Cabrera Sánchez | A01652191 |
-| Katia Fuentes González | A01654060 |
+| Rosa Vanessa Palacios Beltrán | A01652612 |
+| Irving Yael López Solis | A01664809 |
+| Diego Aguilar Torres | A01657884 |
+| Santiago Calderón Ortega | A01663888 |
+| Katia Geraldine Vidals Estrever | A01657587 |
+| David Alberto Padrón Sánchez | A01663806 |
+| Cynthia Amador Santiago | A01737854 |
 
 ## Contenido
 - [Descripción del proyecto](#descripción-del-proyecto)
